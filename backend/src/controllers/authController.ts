@@ -7,8 +7,22 @@ export class AuthController {
    * Get Google OAuth URL
    */
   getAuthUrl(req: Request, res: Response) {
+    const { userId } = req.query;
+
+    if (!userId || typeof userId !== 'string') {
+      return res.status(400).json({ error: 'Missing userId' });
+    }
+
     try {
-      const authUrl = gmailService.getAuthUrl();
+      const user = storageService.getUser(userId);
+
+      if (!user || !user.googleClientId || !user.googleClientSecret) {
+        return res.status(400).json({
+          error: 'User Google OAuth credentials not set. Please configure them first in Settings.'
+        });
+      }
+
+      const authUrl = gmailService.getAuthUrl(user.googleClientId, user.googleClientSecret);
       res.json({ authUrl });
     } catch (error) {
       console.error('Error generating auth URL:', error);
@@ -27,7 +41,17 @@ export class AuthController {
     }
 
     try {
-      const tokens = await gmailService.getTokens(code);
+      const user = storageService.getUser(userId);
+
+      if (!user || !user.googleClientId || !user.googleClientSecret) {
+        return res.status(400).json({ error: 'User Google OAuth credentials not found' });
+      }
+
+      const tokens = await gmailService.getTokens(
+        user.googleClientId,
+        user.googleClientSecret,
+        code
+      );
 
       // Store tokens for the user
       const tokenUpdate: { googleAccessToken: string; googleRefreshToken?: string } = {
@@ -49,14 +73,31 @@ export class AuthController {
    * Refresh access token
    */
   async refreshToken(req: Request, res: Response) {
-    const { refreshToken } = req.body;
+    const { userId } = req.body;
 
-    if (!refreshToken) {
-      return res.status(400).json({ error: 'Missing refresh token' });
+    if (!userId) {
+      return res.status(400).json({ error: 'Missing userId' });
     }
 
     try {
-      const tokens = await gmailService.refreshAccessToken(refreshToken);
+      const user = storageService.getUser(userId);
+
+      if (!user || !user.googleRefreshToken || !user.googleClientId || !user.googleClientSecret) {
+        return res.status(400).json({ error: 'User credentials or refresh token not found' });
+      }
+
+      const tokens = await gmailService.refreshAccessToken(
+        user.googleClientId,
+        user.googleClientSecret,
+        user.googleRefreshToken
+      );
+
+      // Update tokens
+      storageService.updateUserTokens(userId, {
+        googleAccessToken: tokens.access_token,
+        googleRefreshToken: tokens.refresh_token || user.googleRefreshToken,
+      });
+
       res.json({ tokens });
     } catch (error) {
       console.error('Error refreshing token:', error);

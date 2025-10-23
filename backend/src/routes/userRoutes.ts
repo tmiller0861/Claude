@@ -15,4 +15,7 @@ router.post('/rss-feed', userController.addRssFeed.bind(userController));
 // Add podcast feed
 router.post('/podcast-feed', userController.addPodcastFeed.bind(userController));
 
+// Save Google OAuth credentials
+router.post('/google-credentials', userController.saveGoogleCredentials.bind(userController));
+
 export default router;

@@ -22,6 +22,8 @@ export interface FeedItem {
 export interface User {
   id: string;
   email: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
   googleAccessToken?: string;
   googleRefreshToken?: string;
   rssFeedUrls?: string[];

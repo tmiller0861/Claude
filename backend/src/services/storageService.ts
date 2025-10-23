@@ -126,9 +126,14 @@ export class StorageService {
   }
 
   /**
-   * Update user tokens
+   * Update user tokens and credentials
    */
-  updateUserTokens(userId: string, tokens: { googleAccessToken?: string; googleRefreshToken?: string }): void {
+  updateUserTokens(userId: string, tokens: {
+    googleClientId?: string;
+    googleClientSecret?: string;
+    googleAccessToken?: string;
+    googleRefreshToken?: string;
+  }): void {
     const user = this.users.get(userId);
     if (user) {
       this.users.set(userId, { ...user, ...tokens });

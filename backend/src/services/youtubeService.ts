@@ -2,30 +2,30 @@ import { google } from 'googleapis';
 import { FeedItem, OAuthTokens } from '../types';
 
 export class YouTubeService {
-  private oauth2Client;
-
-  constructor() {
-    this.oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-  }
-
   /**
-   * Set credentials for the OAuth client
+   * Create OAuth2 client with user credentials
    */
-  setCredentials(tokens: OAuthTokens) {
-    this.oauth2Client.setCredentials(tokens);
+  private createOAuth2Client(clientId: string, clientSecret: string) {
+    return new google.auth.OAuth2(
+      clientId,
+      clientSecret,
+      'http://localhost:3000/api/auth/callback'
+    );
   }
 
   /**
    * Fetch recent videos from subscribed channels
    */
-  async fetchSubscriptionVideos(tokens: OAuthTokens, maxResults: number = 20): Promise<FeedItem[]> {
-    this.setCredentials(tokens);
+  async fetchSubscriptionVideos(
+    clientId: string,
+    clientSecret: string,
+    tokens: OAuthTokens,
+    maxResults: number = 20
+  ): Promise<FeedItem[]> {
+    const oauth2Client = this.createOAuth2Client(clientId, clientSecret);
+    oauth2Client.setCredentials(tokens);
 
-    const youtube = google.youtube({ version: 'v3', auth: this.oauth2Client });
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
 
     try {
       // Get user's subscriptions
@@ -93,10 +93,16 @@ export class YouTubeService {
   /**
    * Get activity feed (alternative method using activities API)
    */
-  async fetchActivityFeed(tokens: OAuthTokens, maxResults: number = 20): Promise<FeedItem[]> {
-    this.setCredentials(tokens);
+  async fetchActivityFeed(
+    clientId: string,
+    clientSecret: string,
+    tokens: OAuthTokens,
+    maxResults: number = 20
+  ): Promise<FeedItem[]> {
+    const oauth2Client = this.createOAuth2Client(clientId, clientSecret);
+    oauth2Client.setCredentials(tokens);
 
-    const youtube = google.youtube({ version: 'v3', auth: this.oauth2Client });
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
 
     try {
       const response = await youtube.activities.list({
@@ -135,7 +141,7 @@ export class YouTubeService {
     } catch (error) {
       console.error('Error fetching YouTube activity feed:', error);
       // Fallback to subscription videos if activity feed fails
-      return this.fetchSubscriptionVideos(tokens, maxResults);
+      return this.fetchSubscriptionVideos(clientId, clientSecret, tokens, maxResults);
     }
   }
 }

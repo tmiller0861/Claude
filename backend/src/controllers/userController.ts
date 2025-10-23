@@ -93,6 +93,29 @@ export class UserController {
       res.status(500).json({ error: 'Failed to add podcast feed' });
     }
   }
+
+  /**
+   * Save Google OAuth credentials for user
+   */
+  saveGoogleCredentials(req: Request, res: Response) {
+    const { userId, clientId, clientSecret } = req.body;
+
+    if (!userId || !clientId || !clientSecret) {
+      return res.status(400).json({ error: 'Missing userId, clientId, or clientSecret' });
+    }
+
+    try {
+      storageService.updateUserTokens(userId, {
+        googleClientId: clientId,
+        googleClientSecret: clientSecret,
+      });
+      const user = storageService.getUser(userId);
+      res.json({ success: true, user });
+    } catch (error) {
+      console.error('Error saving Google credentials:', error);
+      res.status(500).json({ error: 'Failed to save Google credentials' });
+    }
+  }
 }
 
 export default new UserController();

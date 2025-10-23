@@ -10,24 +10,26 @@ export class FeedAggregator {
    */
   async aggregateFeeds(
     userId: string,
+    googleClientId?: string,
+    googleClientSecret?: string,
     tokens?: OAuthTokens,
     rssFeedUrls?: string[],
     podcastFeedUrls?: string[]
   ): Promise<FeedItem[]> {
     const feedPromises: Promise<FeedItem[]>[] = [];
 
-    // Fetch Gmail emails if tokens are provided
-    if (tokens) {
+    // Fetch Gmail emails if tokens and credentials are provided
+    if (tokens && googleClientId && googleClientSecret) {
       feedPromises.push(
-        gmailService.fetchEmails(tokens).catch(err => {
+        gmailService.fetchEmails(googleClientId, googleClientSecret, tokens).catch(err => {
           console.error('Gmail fetch error:', err);
           return [];
         })
       );
 
-      // Fetch YouTube videos if tokens are provided
+      // Fetch YouTube videos if tokens and credentials are provided
       feedPromises.push(
-        youtubeService.fetchActivityFeed(tokens).catch(err => {
+        youtubeService.fetchActivityFeed(googleClientId, googleClientSecret, tokens).catch(err => {
           console.error('YouTube fetch error:', err);
           return [];
         })

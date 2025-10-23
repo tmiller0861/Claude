@@ -176,8 +176,32 @@ class ApiService {
     await axios.post(`${API_URL}/users/podcast-feed`, { userId: this.userId, feedUrl });
   }
 
+  async saveGoogleCredentials(clientId: string, clientSecret: string): Promise<void> {
+    if (!this.userId) {
+      await this.init();
+    }
+
+    if (!this.userId) {
+      throw new Error('No user ID found');
+    }
+
+    await axios.post(`${API_URL}/users/google-credentials`, {
+      userId: this.userId,
+      clientId,
+      clientSecret,
+    });
+  }
+
   async getAuthUrl(): Promise<string> {
-    const response = await axios.get(`${API_URL}/auth/auth-url`);
+    if (!this.userId) {
+      await this.init();
+    }
+
+    if (!this.userId) {
+      throw new Error('No user ID found');
+    }
+
+    const response = await axios.get(`${API_URL}/auth/auth-url?userId=${this.userId}`);
     return response.data.authUrl;
   }
 

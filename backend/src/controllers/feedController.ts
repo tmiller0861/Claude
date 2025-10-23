@@ -25,6 +25,8 @@ export class FeedController {
 
       const items = await feedAggregator.aggregateFeeds(
         userId,
+        user?.googleClientId,
+        user?.googleClientSecret,
         tokens,
         user?.rssFeedUrls,
         user?.podcastFeedUrls

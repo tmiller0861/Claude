@@ -2,21 +2,23 @@ import { google } from 'googleapis';
 import { FeedItem, OAuthTokens } from '../types';
 
 export class GmailService {
-  private oauth2Client;
-
-  constructor() {
-    this.oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
+  /**
+   * Create OAuth2 client with user credentials
+   */
+  private createOAuth2Client(clientId: string, clientSecret: string, redirectUri?: string) {
+    return new google.auth.OAuth2(
+      clientId,
+      clientSecret,
+      redirectUri || 'http://localhost:3000/api/auth/callback'
     );
   }
 
   /**
    * Get authorization URL for OAuth
    */
-  getAuthUrl(): string {
-    return this.oauth2Client.generateAuthUrl({
+  getAuthUrl(clientId: string, clientSecret: string, redirectUri?: string): string {
+    const oauth2Client = this.createOAuth2Client(clientId, clientSecret, redirectUri);
+    return oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: [
         'https://www.googleapis.com/auth/gmail.readonly',
@@ -29,8 +31,9 @@ export class GmailService {
   /**
    * Exchange authorization code for tokens
    */
-  async getTokens(code: string): Promise<OAuthTokens> {
-    const { tokens } = await this.oauth2Client.getToken(code);
+  async getTokens(clientId: string, clientSecret: string, code: string, redirectUri?: string): Promise<OAuthTokens> {
+    const oauth2Client = this.createOAuth2Client(clientId, clientSecret, redirectUri);
+    const { tokens } = await oauth2Client.getToken(code);
     return {
       access_token: tokens.access_token!,
       refresh_token: tokens.refresh_token ?? undefined,
@@ -39,19 +42,18 @@ export class GmailService {
   }
 
   /**
-   * Set credentials for the OAuth client
-   */
-  setCredentials(tokens: OAuthTokens) {
-    this.oauth2Client.setCredentials(tokens);
-  }
-
-  /**
    * Fetch recent emails from Gmail
    */
-  async fetchEmails(tokens: OAuthTokens, maxResults: number = 20): Promise<FeedItem[]> {
-    this.setCredentials(tokens);
+  async fetchEmails(
+    clientId: string,
+    clientSecret: string,
+    tokens: OAuthTokens,
+    maxResults: number = 20
+  ): Promise<FeedItem[]> {
+    const oauth2Client = this.createOAuth2Client(clientId, clientSecret);
+    oauth2Client.setCredentials(tokens);
 
-    const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
+    const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     try {
       // Get list of message IDs
@@ -125,9 +127,14 @@ export class GmailService {
   /**
    * Refresh access token if expired
    */
-  async refreshAccessToken(refreshToken: string): Promise<OAuthTokens> {
-    this.oauth2Client.setCredentials({ refresh_token: refreshToken });
-    const { credentials } = await this.oauth2Client.refreshAccessToken();
+  async refreshAccessToken(
+    clientId: string,
+    clientSecret: string,
+    refreshToken: string
+  ): Promise<OAuthTokens> {
+    const oauth2Client = this.createOAuth2Client(clientId, clientSecret);
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+    const { credentials } = await oauth2Client.refreshAccessToken();
 
     return {
       access_token: credentials.access_token!,
