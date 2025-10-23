@@ -33,8 +33,8 @@ export class GmailService {
     const { tokens } = await this.oauth2Client.getToken(code);
     return {
       access_token: tokens.access_token!,
-      refresh_token: tokens.refresh_token,
-      expiry_date: tokens.expiry_date,
+      refresh_token: tokens.refresh_token ?? undefined,
+      expiry_date: tokens.expiry_date ?? undefined,
     };
   }
 
@@ -131,8 +131,8 @@ export class GmailService {
 
     return {
       access_token: credentials.access_token!,
-      refresh_token: credentials.refresh_token,
-      expiry_date: credentials.expiry_date,
+      refresh_token: credentials.refresh_token ?? undefined,
+      expiry_date: credentials.expiry_date ?? undefined,
     };
   }
 }

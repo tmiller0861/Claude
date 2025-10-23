@@ -30,10 +30,13 @@ export class AuthController {
       const tokens = await gmailService.getTokens(code);
 
       // Store tokens for the user
-      storageService.updateUserTokens(userId, {
+      const tokenUpdate: { googleAccessToken: string; googleRefreshToken?: string } = {
         googleAccessToken: tokens.access_token,
-        googleRefreshToken: tokens.refresh_token,
-      });
+      };
+      if (tokens.refresh_token) {
+        tokenUpdate.googleRefreshToken = tokens.refresh_token;
+      }
+      storageService.updateUserTokens(userId, tokenUpdate);
 
       res.json({ success: true, tokens });
     } catch (error) {
